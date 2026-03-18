@@ -1,63 +1,60 @@
 import 'dart:io';
-import 'package:command_runner/command_runner.dart';
 import 'package:http/http.dart' as http;
+import 'package:command_runner/command_runner.dart';
 
-const version ='0.0.1'; // GLOBAL
+const version = '0.0.1'; //GLOBAL
 
-// MÉTODO PRINCIPAL 
-void main(List<String> arguments) async {
-  var runner = CommandRunner();
-  await runner.run(arguments);
-  // if(arguments.isEmpty || arguments.first == 'help'){
-  // printUsage();
-
-  // } else if (arguments.first == 'version') {
-  //   print ('Dartpedia CLI - versão $version');
-  // } else if (arguments.first == 'search'){
-  //   final inputArgs = arguments.length > 1 ? arguments.sublist(1) : null;
-  //   searchWikipedia(inputArgs);
-    
-  
-//   else {
-//     printUsage();
-//   }
+void main(List<String> arguments) {
+  var commandRunner = CommandRunner(
+    onOutput: (String output) async {
+      await write(output);
+      },
+      onError: (Object error) {
+        if (error is Error) {
+          throw error;
+      }
+      if (error is Exception) {
+        print(error);
+      }
+    },
+  )..addCommand(HelpCommand());
+  commandRunner.run(arguments);
 }
+ 
 
 void printUsage(){
-  print("Comandos válidos: 'help', 'version','search <ARTICLE-TITLE>'");
+  print("Comando válidos: 'help', 'version', 'search <ARTICLE-TITLE>'");
 }
 
-// ? - Pode ou não receber valores
+//? - Pode ou não receber valores
 void searchWikipedia(List<String>? arguments) async{
  final String? tituloArtigo;
 
- if ( arguments == null || arguments.isEmpty){
+ if (arguments == null || arguments.isEmpty){
   print('Por favor, forneça um assunto:');
-  final inputStdin = stdin.readLineSync ();
+  final inputStdin = stdin.readLineSync();
   if(inputStdin == null || inputStdin.isEmpty){
-    print('Erro, pesquisa em branco.');
+    print('Erro, pesquisa em branco');
     return;
   }
+ 
   tituloArtigo = inputStdin;
-
  } else {
-  tituloArtigo = arguments.join(' ');
+  tituloArtigo  = arguments.join(' ');
  }
  print('Procurando artigos sobre "$tituloArtigo" . Aguarde.');
  var conteudoArtigo = await (getWikipediaArticle(tituloArtigo));
-
- print('Aqui está!');
+ print('Aqui está');
  print(conteudoArtigo);
 }
 
 Future<String> getWikipediaArticle(String tituloArtigo) async{
-  final url = Uri.http('en.wikipwdia.org',
-  '/api/rest_v1/page/summary/$tituloArtigo');
-
+  final url = Uri.https('en.wikipedia.org',
+  '/api/rest_v1/page/sumary/$tituloArtigo',
+  );
   final response = await http.get(url);
-
   if(response.statusCode == 200){
     return response.body;
   }
-  return 'Erro: falha ao acessar o $tituloArtigo';
+  return  'Erro: falha ao acessar $tituloArtigo';
 }
